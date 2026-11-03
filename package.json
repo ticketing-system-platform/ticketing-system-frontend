@@ -1,7 +1,9 @@
 {
-  "name": "frontend",
+  "name": "ticketing-system-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Modern React 19 & Tailwind CSS 4 Web Client for Ticketing System Platform",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

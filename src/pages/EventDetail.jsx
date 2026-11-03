@@ -1,191 +1,209 @@
-import { ArrowLeft, Calendar, MapPin, Tag, Ticket } from 'lucide-react'
+import { ArrowLeft, CalendarDays, MapPin, Minus, Plus, SearchX, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import Alert from '../components/Alert'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import EmptyState from '../components/EmptyState'
 import { EventBanner } from '../components/EventCard'
 import PageLoader from '../components/Loading'
-import StatusBadge from '../components/StatusBadge'
-import api, { getErrorMessage } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
+import api from '../lib/api'
 import { formatDateTime, formatRupiah } from '../lib/format'
 
+const MAX_PER_TYPE = 10 // sama dengan validasi max:10 di CheckoutRequest
+
 export default function EventDetail() {
-  const { slug } = useParams()
+  const { slug } = useParams() // ambil :slug dari URL /events/:slug
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [quantities, setQuantities] = useState({}) // { ticketTypeId: qty }
 
   useEffect(() => {
-    let ignore = false
-
     api
       .get(`/events/${slug}`)
-      .then((res) => {
-        if (!ignore) {
-          setEvent(res.data.data)
-          setError(null)
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(getErrorMessage(err))
-        }
-      })
-      .finally(() => {
-        if (!ignore) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      ignore = true
-    }
+      .then((res) => setEvent(res.data.data))
+      .catch(() => setEvent(null))
+      .finally(() => setLoading(false))
   }, [slug])
 
-  if (loading) {
-    return <PageLoader text="Memuat detail event..." />
-  }
+  if (loading) return <PageLoader />
 
-  if (error || !event) {
+  if (!event) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-        <Link to="/" className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
-          <ArrowLeft className="size-4" /> Kembali ke Jelajahi Event
-        </Link>
-        <Alert type="error">{error || 'Event tidak ditemukan'}</Alert>
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <EmptyState
+          icon={SearchX}
+          title="Event tidak ditemukan"
+          description="Event mungkin sudah dihapus atau belum dipublikasikan."
+          action={
+            <Link to="/" className="btn btn-primary">
+              Kembali ke Beranda
+            </Link>
+          }
+        />
       </div>
     )
   }
 
-  const ticketTypes = event.ticket_types || event.tickets_type || []
-  const startAt = event.start_at || event['start-at']
+  function changeQty(ticketType, delta) {
+    const max = Math.min(ticketType.remaining, MAX_PER_TYPE)
+    const current = quantities[ticketType.id] ?? 0
+    const next = Math.max(0, Math.min(max, current + delta))
+    setQuantities({ ...quantities, [ticketType.id]: next })
+  }
+
+  // Jenis tiket yang jumlahnya > 0
+  const selected = event.ticket_types
+    .filter((type) => (quantities[type.id] ?? 0) > 0)
+    .map((type) => ({ ticketType: type, qty: quantities[type.id] }))
+
+  const total = selected.reduce((sum, item) => sum + item.ticketType.price * item.qty, 0)
+
+  function handleBuy() {
+    if (!user) {
+      // Belum login: arahkan ke login, lalu kembali ke halaman ini
+      navigate('/login', { state: { from: location } })
+      return
+    }
+    // Kirim data pilihan tiket ke halaman Checkout lewat "state" navigasi
+    navigate('/checkout', { state: { event, items: selected } })
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      {/* Tombol kembali */}
       <Link
         to="/"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600"
       >
-        <ArrowLeft className="size-4" /> Kembali ke Jelajahi Event
+        <ArrowLeft className="size-4" /> Kembali
       </Link>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Kolom Kiri: Banner, Info, Deskripsi */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Banner Event */}
-          <div className="card overflow-hidden">
-            <div className="aspect-[16/9] w-full bg-slate-100">
-              <EventBanner event={event} />
+      <div className="aspect-[21/9] overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
+        <EventBanner event={event} />
+      </div>
+
+      <div className="mt-8 grid gap-8 lg:grid-cols-3">
+        {/* Informasi event */}
+        <div className="lg:col-span-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            {event.title}
+          </h1>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="card flex items-start gap-3 p-4">
+              <span className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
+                <CalendarDays className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Tanggal & Waktu</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {formatDateTime(event.start_at)}
+                </p>
+              </div>
             </div>
-            <div className="p-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={event.status} />
-                <span className="text-xs font-semibold text-indigo-600">
-                  {ticketTypes.length} Pilihan Tiket
-                </span>
-              </div>
-              <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                {event.title}
-              </h1>
-
-              <div className="mt-4 grid grid-cols-1 gap-3 border-y border-slate-100 py-4 sm:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
-                    <Calendar className="size-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500">Waktu & Tanggal</div>
-                    <div className="text-sm font-semibold text-slate-800">
-                      {startAt ? formatDateTime(startAt) : '-'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
-                    <MapPin className="size-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500">Lokasi / Venue</div>
-                    <div className="text-sm font-semibold text-slate-800">{event.venue}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Deskripsi */}
-              <div className="mt-6">
-                <h2 className="text-base font-semibold text-slate-900">Deskripsi Event</h2>
-                <div className="mt-2 text-sm leading-relaxed whitespace-pre-line text-slate-600">
-                  {event.description || 'Tidak ada deskripsi untuk event ini.'}
-                </div>
+            <div className="card flex items-start gap-3 p-4">
+              <span className="rounded-xl bg-indigo-50 p-2.5 text-indigo-600">
+                <MapPin className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-medium text-slate-500">Lokasi</p>
+                <p className="text-sm font-semibold text-slate-900">{event.venue}</p>
               </div>
             </div>
           </div>
+
+          <h2 className="mt-8 text-lg font-bold text-slate-900">Tentang Event</h2>
+          {/* whitespace-pre-line: baris baru (\n) di deskripsi tetap tampil */}
+          <p className="mt-2 leading-relaxed whitespace-pre-line text-slate-600">
+            {event.description}
+          </p>
         </div>
 
-        {/* Kolom Kanan: Pilihan Tiket */}
-        <div className="lg:col-span-1">
-          <div className="card sticky top-20 p-6">
+        {/* Pilih tiket */}
+        <aside>
+          <div className="card sticky top-24 p-5">
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-              <Ticket className="size-5 text-indigo-600" /> Pilihan Tiket
+              <Ticket className="size-5 text-indigo-600" /> Pilih Tiket
             </h2>
-            <p className="mt-1 text-xs text-slate-500">
-              Pilih tiket yang tersedia untuk event ini
-            </p>
 
-            <div className="mt-6 space-y-4">
-              {ticketTypes.length === 0 ? (
-                <EmptyState
-                  icon={Tag}
-                  title="Belum Ada Tiket"
-                  description="Tiket untuk event ini belum dibuka atau belum ditambahkan oleh penyelenggara."
-                />
-              ) : (
-                ticketTypes.map((ticket) => {
-                  const isSoldOut = ticket.remaining === 0
+            <div className="mt-4 space-y-3">
+              {event.ticket_types.length === 0 && (
+                <p className="text-sm text-slate-500">Tiket belum tersedia.</p>
+              )}
 
-                  return (
-                    <div
-                      key={ticket.id}
-                      className="rounded-xl border border-slate-200 p-4 transition hover:border-indigo-300"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-900">{ticket.name}</h3>
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {isSoldOut ? (
-                              <span className="font-semibold text-rose-600">Tiket Habis</span>
-                            ) : (
-                              `Sisa kuota: ${ticket.remaining ?? ticket.quota}`
-                            )}
-                          </p>
-                        </div>
-                        <span className="text-sm font-extrabold text-indigo-600">
-                          {formatRupiah(ticket.price)}
-                        </span>
+              {event.ticket_types.map((type) => {
+                const qty = quantities[type.id] ?? 0
+                const soldOut = type.remaining === 0
+
+                return (
+                  <div
+                    key={type.id}
+                    className={`rounded-xl border p-4 transition ${
+                      qty > 0 ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-200'
+                    } ${soldOut ? 'opacity-60' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-900">{type.name}</p>
+                        <p className="text-sm font-medium text-indigo-600">
+                          {formatRupiah(type.price)}
+                        </p>
                       </div>
+                      <span
+                        className={`text-xs font-medium ${
+                          soldOut
+                            ? 'text-rose-600'
+                            : type.remaining <= 10
+                              ? 'text-amber-600'
+                              : 'text-slate-500'
+                        }`}
+                      >
+                        {soldOut ? 'Habis' : `Sisa ${type.remaining}`}
+                      </span>
+                    </div>
 
-                      <div className="mt-3 border-t border-slate-100 pt-3 flex items-center justify-between">
-                        <span className="text-xs text-slate-400">Termasuk pajak & biaya layanan</span>
+                    {!soldOut && (
+                      <div className="mt-3 flex items-center justify-end gap-3">
                         <button
                           type="button"
-                          disabled={isSoldOut}
-                          className="btn btn-primary text-xs py-1.5 px-3"
-                          onClick={() => {
-                            alert(`Pembelian tiket akan dibuka pada modul transaksi (P4). Tiket: ${ticket.name}`)
-                          }}
+                          onClick={() => changeQty(type, -1)}
+                          disabled={qty === 0}
+                          className="btn btn-secondary size-8 rounded-lg p-0"
                         >
-                          {isSoldOut ? 'Habis' : 'Pesan'}
+                          <Minus className="size-4" />
+                        </button>
+                        <span className="w-6 text-center font-semibold tabular-nums">{qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => changeQty(type, 1)}
+                          disabled={qty >= Math.min(type.remaining, MAX_PER_TYPE)}
+                          className="btn btn-secondary size-8 rounded-lg p-0"
+                        >
+                          <Plus className="size-4" />
                         </button>
                       </div>
-                    </div>
-                  )
-                })
-              )}
+                    )}
+                  </div>
+                )
+              })}
             </div>
+
+            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+              <span className="text-sm text-slate-500">Total</span>
+              <span className="text-xl font-bold text-slate-900">{formatRupiah(total)}</span>
+            </div>
+
+            <button
+              onClick={handleBuy}
+              disabled={selected.length === 0}
+              className="btn btn-primary mt-4 w-full py-3"
+            >
+              {user ? 'Beli Tiket' : 'Masuk untuk Membeli'}
+            </button>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   )
