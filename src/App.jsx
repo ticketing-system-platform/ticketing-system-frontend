@@ -10,6 +10,9 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
+import Checkout from './pages/customer/Checkout'
+import MyOrders from './pages/customer/MyOrders'
+import PaymentStatus from './pages/customer/PaymentStatus'
 
 export default function App() {
   return (
@@ -20,6 +23,14 @@ export default function App() {
         <Route path="/events/:slug" element={<EventDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* Wajib login */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<MyOrders />} />
+          <Route path="/orders/:code" element={<PaymentStatus />} />
+        </Route>
+
         <Route path="*" element={<NotFound />} />
       </Route>
 
