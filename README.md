@@ -46,15 +46,26 @@ frontend/src/
 │   ├── Loading.jsx      # Animated spinners & skeleton states
 │   ├── Navbar.jsx       # Global responsive navigation header
 │   ├── PageHeader.jsx   # Uniform page title & breadcrumbs
+│   ├── ProtectedRoute.jsx # Role-based route guard (Admin/Customer)
 │   └── StatusBadge.jsx  # Event & ticket status indicator pills
 ├── context/
 │   └── AuthContext.jsx  # Global auth state & user session provider
 ├── layouts/
-│   └── MainLayout.jsx   # Common layout with Navbar & Footer wrapper
+│   ├── AdminLayout.jsx  # Backoffice admin panel sidebar & layout
+│   └── MainLayout.jsx   # Customer layout with responsive Navbar
 ├── lib/
 │   ├── api.js           # Central Axios HTTP client with interceptors
-│   └── format.js        # Currency (IDR) & localized date formatters
+│   ├── format.js        # Currency (IDR) & localized date formatters
+│   └── midtrans.js      # Dynamic Midtrans Snap SDK loader & trigger
 └── pages/
+    ├── admin/           # Admin Backoffice Views
+    │   ├── EventForm.jsx   # Create & update event details with banner upload
+    │   ├── Events.jsx      # Admin event table & status management
+    │   └── TicketTypes.jsx # Manage event ticket categories & quotas
+    ├── customer/        # Customer Transaction Views
+    │   ├── Checkout.jsx    # Review order, buyer details, and trigger Snap
+    │   ├── MyOrders.jsx    # Customer transaction & purchase history
+    │   └── PaymentStatus.jsx # Real-time polling status & countdown
     ├── EventDetail.jsx  # Event details, description & ticket selection
     ├── Home.jsx         # Event showcase & search catalog
     ├── Login.jsx        # Customer login screen
