@@ -65,6 +65,7 @@ frontend/src/
     ├── customer/        # Customer Transaction Views
     │   ├── Checkout.jsx    # Review order, buyer details, and trigger Snap
     │   ├── MyOrders.jsx    # Customer transaction & purchase history
+    │   ├── MyTickets.jsx   # Paid e-tickets with scannable QR code & modal
     │   └── PaymentStatus.jsx # Real-time polling status & countdown
     ├── EventDetail.jsx  # Event details, description & ticket selection
     ├── Home.jsx         # Event showcase & search catalog

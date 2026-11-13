@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound'
 import Register from './pages/Register'
 import Checkout from './pages/customer/Checkout'
 import MyOrders from './pages/customer/MyOrders'
+import MyTickets from './pages/customer/MyTickets'
 import PaymentStatus from './pages/customer/PaymentStatus'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
         {/* Wajib login */}
         <Route element={<ProtectedRoute />}>
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/orders" element={<MyOrders />} />
           <Route path="/orders/:code" element={<PaymentStatus />} />
         </Route>
