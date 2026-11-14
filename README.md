@@ -59,8 +59,11 @@ frontend/src/
 │   └── midtrans.js      # Dynamic Midtrans Snap SDK loader & trigger
 └── pages/
     ├── admin/           # Admin Backoffice Views
+    │   ├── Dashboard.jsx   # Revenue analytics, sales meter & recent orders
     │   ├── EventForm.jsx   # Create & update event details with banner upload
     │   ├── Events.jsx      # Admin event table & status management
+    │   ├── Orders.jsx      # Paginated order list, status filter & search
+    │   ├── Scanner.jsx     # Live camera & manual QR code check-in scanner
     │   └── TicketTypes.jsx # Manage event ticket categories & quotas
     ├── customer/        # Customer Transaction Views
     │   ├── Checkout.jsx    # Review order, buyer details, and trigger Snap
