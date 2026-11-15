@@ -30,7 +30,10 @@ function loadSnap() {
 export async function payWithSnap(snapToken, callbacks = {}) {
   const snap = await loadSnap()
   // callbacks: { onSuccess, onPending, onError, onClose }, semuanya opsional.
-  // Kirim apa adanya: Snap menolak callback yang bernilai undefined
-  // ("onSuccess should be of type function").
-  snap.pay(snapToken, callbacks)
+  // Snap menolak callback yang bernilai undefined ("onSuccess should be of type function").
+  // Hanya teruskan callback yang bertipe fungsi.
+  const cleanCallbacks = Object.fromEntries(
+    Object.entries(callbacks).filter(([, fn]) => typeof fn === 'function'),
+  )
+  snap.pay(snapToken, cleanCallbacks)
 }
