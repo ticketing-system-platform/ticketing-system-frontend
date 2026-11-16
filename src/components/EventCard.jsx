@@ -24,7 +24,7 @@ export function EventBanner({ event, className = '' }) {
 }
 
 export default function EventCard({ event }) {
-  const { day, month } = dateParts(event.start_at || event['start-at'])
+  const { day, month } = dateParts(event.start_at)
   const soldOut = event.ticket_types?.every((type) => type.remaining === 0)
 
   return (
@@ -49,9 +49,7 @@ export default function EventCard({ event }) {
       </div>
 
       <div className="p-5">
-        <p className="text-xs font-medium text-indigo-600">
-          {formatShortDateTime(event.start_at || event['start-at'])}
-        </p>
+        <p className="text-xs font-medium text-indigo-600">{formatShortDateTime(event.start_at)}</p>
         <h3 className="mt-1 line-clamp-1 text-lg font-semibold text-slate-900 group-hover:text-indigo-600">
           {event.title}
         </h3>
