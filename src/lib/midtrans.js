@@ -8,7 +8,7 @@ function loadSnap() {
     snapPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script')
       script.src = import.meta.env.VITE_MIDTRANS_SNAP_URL
-      // Client Key boleh berada di frontend (berbeda dengan Server Key!)
+      
       script.setAttribute('data-client-key', import.meta.env.VITE_MIDTRANS_CLIENT_KEY)
       script.onload = () => resolve(window.snap)
       script.onerror = () => {
@@ -22,16 +22,10 @@ function loadSnap() {
   return snapPromise
 }
 
-/**
- * Buka popup pembayaran Midtrans.
- * Callback hanya untuk navigasi/UI. Status pembayaran yang SEBENARNYA
- * ditentukan oleh webhook di backend, bukan oleh callback ini.
- */
+
 export async function payWithSnap(snapToken, callbacks = {}) {
   const snap = await loadSnap()
-  // callbacks: { onSuccess, onPending, onError, onClose }, semuanya opsional.
-  // Snap menolak callback yang bernilai undefined ("onSuccess should be of type function").
-  // Hanya teruskan callback yang bertipe fungsi.
+  
   const cleanCallbacks = Object.fromEntries(
     Object.entries(callbacks).filter(([, fn]) => typeof fn === 'function'),
   )
